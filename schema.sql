@@ -1,104 +1,120 @@
 -- ════════════════════════════════════════════════════════════════
---  PhishShield AI — schema.sql
---  Run once:  mysql -u root -p < schema.sql
+--  PhishShield AI — Railway PostgreSQL Schema
+--  Compatible with: Railway.app PostgreSQL plugin
+--  Run via: Railway Dashboard → PostgreSQL → Query tab
+--  OR via psql: psql $DATABASE_URL < railway_schema_postgresql.sql
 -- ════════════════════════════════════════════════════════════════
 
-CREATE DATABASE IF NOT EXISTS phishshield
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE phishshield;
-
--- Clean re-run
+-- Clean re-run (correct dependency order)
 DROP TABLE IF EXISTS admin_reports;
 DROP TABLE IF EXISTS scan_history;
 DROP TABLE IF EXISTS users;
 
--- ── Users ────────────────────────────────────────────────────────
+-- ── Users ─────────────────────────────────────────────────────────
 CREATE TABLE users (
-    id         INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    id         SERIAL        NOT NULL,
+    name       TEXT          NOT NULL DEFAULT '',
     username   VARCHAR(80)   NOT NULL,
     email      VARCHAR(120)  NOT NULL,
     password   VARCHAR(256)  NOT NULL,
-    is_admin   TINYINT(1)    NOT NULL DEFAULT 0,
-    created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_admin   SMALLINT      NOT NULL DEFAULT 0,
+    created_at TIMESTAMP     NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id),
-    UNIQUE KEY uq_username (username),
-    UNIQUE KEY uq_email    (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    CONSTRAINT uq_username UNIQUE (username),
+    CONSTRAINT uq_email    UNIQUE (email)
+);
 
--- ── Scan History ─────────────────────────────────────────────────
+-- ── Scan History ──────────────────────────────────────────────────
+-- result      = 'safe' | 'warn' | 'phish'
+-- is_phishing = 0 or 1  (boolean flag)
+-- is_suspicious = 0 or 1
+-- algo        = comma-separated model keys e.g. 'lr,rf,xgb,stack'
+-- confidence  = 0.0 to 100.0
 CREATE TABLE scan_history (
-    id         INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    user_id    INT UNSIGNED  NOT NULL,
-    url        TEXT          NOT NULL,
-    result     ENUM('Phishing','Safe') NOT NULL,
-    confidence FLOAT         NOT NULL DEFAULT 0,
-    timestamp  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id            SERIAL      NOT NULL,
+    user_id       INTEGER     NOT NULL,
+    url           TEXT        NOT NULL,
+    result        VARCHAR(20) NOT NULL DEFAULT 'safe',
+    confidence    REAL        NOT NULL DEFAULT 0,
+    is_phishing   SMALLINT    NOT NULL DEFAULT 0,
+    is_suspicious SMALLINT    NOT NULL DEFAULT 0,
+    algo          TEXT        NOT NULL DEFAULT '',
+    timestamp     TIMESTAMP   NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id),
-    KEY idx_user      (user_id),
-    KEY idx_timestamp (timestamp),
-    KEY idx_result    (result),
     CONSTRAINT fk_sh_user
         FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ON DELETE CASCADE
+);
 
 -- ── Admin Reports ─────────────────────────────────────────────────
 CREATE TABLE admin_reports (
-    id             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    generated_by   INT UNSIGNED,
-    generated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total_scans    INT          NOT NULL DEFAULT 0,
-    phishing_count INT          NOT NULL DEFAULT 0,
-    safe_count     INT          NOT NULL DEFAULT 0,
+    id             SERIAL    NOT NULL,
+    generated_by   INTEGER,
+    generated_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+    total_scans    INTEGER   NOT NULL DEFAULT 0,
+    phishing_count INTEGER   NOT NULL DEFAULT 0,
+    safe_count     INTEGER   NOT NULL DEFAULT 0,
     notes          TEXT,
     PRIMARY KEY (id),
     CONSTRAINT fk_ar_user
         FOREIGN KEY (generated_by) REFERENCES users(id)
-        ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ON DELETE SET NULL
+);
+
+-- ── Indexes ───────────────────────────────────────────────────────
+CREATE INDEX idx_scan_user      ON scan_history (user_id);
+CREATE INDEX idx_scan_timestamp ON scan_history (timestamp DESC);
+CREATE INDEX idx_scan_result    ON scan_history (result);
+CREATE INDEX idx_scan_phishing  ON scan_history (is_phishing);
 
 -- ════════════════════════════════════════════════════════════════
---  SEED DATA
+--  SEED DATA — Admin & Demo users
+--  Passwords auto-set by app.py init_db() on first deploy
 -- ════════════════════════════════════════════════════════════════
 
--- Default admin  (password = Admin@1234)
--- ⚠ Replace hash below after running seed_admin.py
-INSERT INTO users (username, email, password, is_admin) VALUES
-('admin', 'admin@phishshield.io',
- 'scrypt:32768:8:1$PLACEHOLDER$run_seed_admin_py_to_fix_this', 1);
+INSERT INTO users (name, username, email, password, is_admin) VALUES
+('Admin', 'admin', 'admin@phishguard.ai',
+ 'pbkdf2:sha256:600000$placeholder$0000000000000000000000000000000000000000',
+ 1);
 
--- Demo regular user  (password = User@1234)
-INSERT INTO users (username, email, password, is_admin) VALUES
-('demo', 'demo@phishshield.io',
- 'scrypt:32768:8:1$PLACEHOLDER$run_seed_admin_py_to_fix_this', 0);
+INSERT INTO users (name, username, email, password, is_admin) VALUES
+('Demo User', 'demo', 'demo@phishguard.ai',
+ 'pbkdf2:sha256:600000$placeholder$0000000000000000000000000000000000000000',
+ 0);
 
--- Sample scan history for demo user (id=2)
-INSERT INTO scan_history (user_id, url, result, confidence, timestamp) VALUES
-(2, 'https://www.google.com',                           'Safe',     97.2, NOW() - INTERVAL 1  HOUR),
-(2, 'http://paypa1-secure-login.tk/verify?user=you',    'Phishing', 94.5, NOW() - INTERVAL 2  HOUR),
-(2, 'https://github.com/openai/whisper',                'Safe',     96.8, NOW() - INTERVAL 3  HOUR),
-(2, 'http://192.168.1.1/admin/login?redirect=bank',     'Phishing', 88.3, NOW() - INTERVAL 5  HOUR),
-(2, 'https://www.amazon.com/orders',                    'Safe',     91.0, NOW() - INTERVAL 1  DAY),
-(2, 'http://bit.ly/3xK9mN2',                            'Phishing', 72.1, NOW() - INTERVAL 2  DAY),
-(2, 'https://stackoverflow.com/questions/12345',        'Safe',     98.1, NOW() - INTERVAL 3  DAY),
-(2, 'http://microsoft-support-update.xyz/fix',          'Phishing', 91.7, NOW() - INTERVAL 4  DAY),
-(2, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',     'Safe',     95.3, NOW() - INTERVAL 5  DAY),
-(2, 'http://amaz0n-account-verify.ga/signin',           'Phishing', 96.2, NOW() - INTERVAL 6  DAY);
+-- ── Sample scan history (demo user id=2) ─────────────────────────
+INSERT INTO scan_history
+    (user_id, url, result, confidence, is_phishing, is_suspicious, algo, timestamp)
+VALUES
+(2,'https://www.google.com',                        'safe',  97.2,0,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '1 hour'),
+(2,'http://paypa1-secure-login.tk/verify?user=you', 'phish', 94.5,1,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '2 hours'),
+(2,'https://github.com/openai/whisper',             'safe',  96.8,0,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '3 hours'),
+(2,'http://192.168.1.1/admin/login?redirect=bank',  'phish', 88.3,1,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '5 hours'),
+(2,'https://www.amazon.com/orders',                 'safe',  91.0,0,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '1 day'),
+(2,'http://bit.ly/3xK9mN2',                         'warn',  72.1,0,1,'xgb,lgb,rf,stack', NOW()-INTERVAL '2 days'),
+(2,'https://stackoverflow.com/questions/12345',     'safe',  98.1,0,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '3 days'),
+(2,'http://microsoft-support-update.xyz/fix',       'phish', 91.7,1,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '4 days'),
+(2,'https://www.youtube.com/watch?v=dQw4w9WgXcQ',  'safe',  95.3,0,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '5 days'),
+(2,'http://amaz0n-account-verify.ga/signin',        'phish', 96.2,1,0,'xgb,lgb,rf,stack', NOW()-INTERVAL '6 days');
 
 -- ════════════════════════════════════════════════════════════════
---  HOW TO SET REAL PASSWORDS
+--  VERIFY — Run this after to confirm success
 -- ════════════════════════════════════════════════════════════════
--- Run this in a Python shell once:
---
---   from werkzeug.security import generate_password_hash
---   print(generate_password_hash('Admin@1234'))
---   print(generate_password_hash('User@1234'))
---
--- Then:
---   UPDATE users SET password='<hash1>' WHERE username='admin';
---   UPDATE users SET password='<hash2>' WHERE username='demo';
---
--- OR use seed_admin.py (included).
--- ════════════════════════════════════════════════════════════════
+SELECT 'users'         AS table_name, COUNT(*) AS rows FROM users
+UNION ALL
+SELECT 'scan_history'  AS table_name, COUNT(*) AS rows FROM scan_history
+UNION ALL
+SELECT 'admin_reports' AS table_name, COUNT(*) AS rows FROM admin_reports;
+
+-- Full scan log check
+SELECT
+    u.name        AS user_name,
+    s.url         AS url,
+    s.result      AS verdict,
+    s.confidence  AS confidence_pct,
+    s.is_phishing AS phishing,
+    s.algo        AS models_used,
+    s.timestamp   AS scanned_at
+FROM scan_history s
+JOIN users u ON s.user_id = u.id
+ORDER BY s.timestamp DESC;
