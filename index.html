@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhishGuard Pro 2.0 — AI Phishing Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Mulish:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ══ ADMIN LOGIN MODAL ═══════════════════════════════════════ -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeAdminModal()">✕</button>
+      <div class="l-logo" style="margin-bottom:1.1rem">
+        <div class="l-shield" style="background:linear-gradient(140deg,#6d28d9,#4f46e5)">🔐</div>
+        <div>
+          <div class="l-logo-text" style="font-size:1.1rem">Admin Portal</div>
+          <div class="l-sub">Restricted Access</div>
+        </div>
+      </div>
+      <div class="restricted-badge">🔒 ADMIN ONLY</div>
+      <div class="l-err" id="aErr"></div>
+      <div class="lf"><input type="text" id="aUser" placeholder="Username (admin)" autocomplete="off" /></div>
+      <div class="lf"><input type="password" id="aPass" placeholder="Password" /></div>
+      <button class="btn-primary" onclick="doAdminLogin()"
+        style="background:var(--purple);box-shadow:0 4px 18px rgba(109,40,217,.32)">
+        🔐 Access Admin Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ LOGIN SCREEN ═══════════════════════════════════════════ -->
+  <div id="loginScreen">
+    <div class="lcard">
+      <div class="l-logo">
+        <div class="l-shield">🛡</div>
+        <div>
+          <div class="l-logo-text"><span class="grad">PhishGuard</span> Pro</div>
+          <div class="l-sub">Multi-Model AI Defense · v2.0</div>
+        </div>
+      </div>
+      <div class="l-tabs">
+        <button class="ltab active" onclick="switchAuth('login')">Sign In</button>
+        <button class="ltab" onclick="switchAuth('signup')">Sign Up</button>
+        <button class="ltab admin-ltab" onclick="openAdminModal()">🔐 Admin</button>
+      </div>
+      <!-- SIGN IN -->
+      <div id="fLogin">
+        <div class="l-title">Welcome Back</div>
+        <div class="l-err" id="lErr"></div>
+        <div class="lf"><input type="email" id="lEmail" placeholder="Email address" autocomplete="email" /></div>
+        <div class="lf"><input type="password" id="lPass" placeholder="Password" /></div>
+        <button class="btn-primary" onclick="doLogin()">🔒 Sign In Securely</button>
+        <div class="l-demo">Demo: <strong>demo@phishguard.ai</strong> / <strong>demo123</strong></div>
+      </div>
+      <!-- SIGN UP -->
+      <div id="fSignup" style="display:none">
+        <div class="l-title">Create Account</div>
+        <div class="l-err" id="sErr"></div>
+        <div class="lf"><input type="text" id="sName" placeholder="Full Name" /></div>
+        <div class="lf"><input type="email" id="sEmail" placeholder="Email address" /></div>
+        <div class="lf"><input type="password" id="sPass" placeholder="Password (min 6 chars)" /></div>
+        <button class="btn-primary" onclick="doSignup()">🚀 Create Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN APP ═══════════════════════════════════════════════ -->
+  <div id="app">
+
+    <!-- NAV -->
+    <nav>
+      <div class="n-logo" onclick="showPage('scanner')">
+        <div class="n-shield">🛡</div>
+        <span class="n-brand">PhishGuard</span><span class="n-pro">PRO 2.0</span>
+      </div>
+      <div class="n-tabs">
+        <button class="ntab active" id="tab-scanner" onclick="showPage('scanner')">🔬 Scanner</button>
+        <button class="ntab" id="tab-history" onclick="showPage('history')">📋 History</button>
+        <button class="ntab admin-ntab" id="tab-admin" onclick="showPage('admin')" style="display:none">📊
+          Admin</button>
+        <button class="ntab" id="tab-about" onclick="showPage('about')">ℹ About</button>
+      </div>
+      <div class="n-user" onclick="doLogout()">
+        <div class="n-av" id="navAv">U</div>
+        <span id="navNm">User</span>
+        <span style="font-size:.68rem;color:var(--text3)">↩</span>
+      </div>
+    </nav>
+
+    <!-- ══ SCANNER PAGE ═══════════════════════════════════════════ -->
+    <div class="page active" id="page-scanner">
+      <div class="ctr">
+
+        <!-- HERO -->
+        <div class="hero-banner">
+          <div>
+            <div class="hero-tag">Multi-Model AI Ensemble · Trained on Real Dataset</div>
+            <h1 class="hero-title">Detect <span class="hl">Phishing URLs</span><br>with 6 AI Models</h1>
+            <p class="hero-desc">Real ML models trained on 1,100 URLs with 15 features. Each model votes independently —
+              ensemble decision gives you maximum accuracy.</p>
+            <div class="hero-badges" id="heroBadges">
+              <span class="hbadge">🏆 100% Accuracy</span>
+              <span class="hbadge">⚡ 6 Algorithms</span>
+              <span class="hbadge">🗳️ Ensemble Vote</span>
+              <span class="hbadge">🤖 AI Suggestions</span>
+              <span class="hbadge">📊 Model Comparison</span>
+              <span class="hbadge">🔒 Private History</span>
+            </div>
+          </div>
+          <div class="feed-box">
+            <div class="feed-label">LIVE DETECTION FEED</div>
+            <div class="feed-item fi-red"><span class="feed-dot dot-red"></span>paypal-secure-login.tk/auth</div>
+            <div class="feed-item fi-green"><span class="feed-dot dot-green"></span>github.com/torvalds/linux</div>
+            <div class="feed-item fi-red"><span class="feed-dot dot-red"></span>amazon-verify.xyz/checkout</div>
+            <div class="feed-item fi-amber"><span class="feed-dot dot-amber"></span>amazon-support.click/refund</div>
+            <div class="feed-item fi-green"><span class="feed-dot dot-green"></span>microsoft.com/signin</div>
+            <div class="feed-item fi-red"><span class="feed-dot dot-red"></span>192.168.1.1/bank/login</div>
+          </div>
+        </div>
+
+        <!-- STEP 1: SELECT MODELS -->
+        <div class="card">
+          <div class="sl">Step 1 — Select ML Models</div>
+          <div class="st">Choose Algorithms for Ensemble</div>
+          <p class="ss">Select any combination — all chosen models vote independently. Results are compared side by
+            side. All 6 selected by default (recommended).</p>
+          <div class="algo-actions">
+            <button class="algo-action-btn" onclick="selectAllAlgos(true)">✓ Select All</button>
+            <button class="algo-action-btn" onclick="selectAllAlgos(false)">✗ Clear All</button>
+            <span style="font-family:var(--mono);font-size:.67rem;color:var(--text3);margin-left:6px">More models =
+              higher confidence</span>
+          </div>
+          <div class="algo-grid-multi" id="algoGrid"></div>
+        </div>
+
+        <!-- STEP 2: SCAN URL -->
+        <div class="card">
+          <div class="sl">Step 2 — Scan URL</div>
+          <div class="st">Enter URL to Analyze</div>
+          <div class="scan-input-wrap">
+            <input class="url-input" id="urlInput" type="text"
+              placeholder="https://suspicious-example.xyz/verify or any URL…" />
+            <button class="btn-scan" id="scanBtn" onclick="runScan()">🤖 AI Ensemble Scan</button>
+          </div>
+          <div class="scan-hint">↩ Press Enter · HTTP/HTTPS · IP addresses · URL shorteners · Bare domains &nbsp;·&nbsp;
+            <a href="#" onclick="fillDemo('safe');return false" style="color:var(--green);text-decoration:none">Try safe
+              URL</a> ·
+            <a href="#" onclick="fillDemo('phish');return false" style="color:var(--red);text-decoration:none">Try
+              phishing URL</a>
+          </div>
+        </div>
+
+        <!-- RESULT CARD -->
+        <div class="result-card" id="RC">
+          <div class="result-top">
+            <div class="result-verdict">
+              <span class="verdict-icon" id="vIcon">🔵</span>
+              <span class="verdict-label" id="vLabel">Awaiting Analysis</span>
+              <span class="verdict-pill pill-ready" id="vPill">READY</span>
+            </div>
+            <div class="conf-wrap" id="confSec" style="display:none">
+              <div class="conf-labels"><span>Ensemble Confidence</span><span id="confPct">—</span></div>
+              <div class="conf-track">
+                <div class="conf-fill" id="confFill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="result-body" id="resultBody">
+            <div style="padding:3rem;text-align:center;color:var(--text2);font-size:.85rem">Select models above, enter a
+              URL, and click <strong>AI Ensemble Scan</strong>.</div>
+          </div>
+        </div>
+
+        <!-- ALGO REFERENCE TABLE -->
+        <div class="card" style="margin-top:1.3rem">
+          <div class="sl">Reference</div>
+          <div class="st">Algorithm Performance — phishing_features_database_1100.csv</div>
+          <p class="ss">1,100 URLs (550 phishing + 550 safe) · 15 features · 80/20 train-test split · random_state=42
+          </p>
+          <div class="comp-table-wrap">
+            <table class="comp-table" id="refTable">
+              <thead>
+                <tr>
+                  <th>Algorithm</th>
+                  <th>Train Features</th>
+                  <th>Test Accuracy</th>
+                  <th>Parameters</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody id="refTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-scanner -->
+
+    <!-- ══ HISTORY PAGE ═══════════════════════════════════════════ -->
+    <div class="page" id="page-history">
+      <div class="ctr">
+        <div class="hist-top">
+          <div>
+            <div class="sl">Your Scan Log</div>
+            <div class="st">Personal Scan History</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="exportMyCSV()">📄 Export CSV</button>
+            <button class="btn btn-blue" onclick="downloadMyReport()">⬇ Download Report</button>
+            <button class="btn btn-danger" onclick="clearMyHistory()">✕ Clear All</button>
+          </div>
+        </div>
+        <div class="hist-stats" id="histStats" style="display:none">
+          <div class="hstat">
+            <div class="hstat-val c-blue" id="hsTot">0</div>
+            <div class="hstat-lbl">Total</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val c-red" id="hsPh">0</div>
+            <div class="hstat-lbl">Phishing</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val c-green" id="hsSa">0</div>
+            <div class="hstat-lbl">Safe</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val c-amber" id="hsWs">0</div>
+            <div class="hstat-lbl">Suspicious</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val c-red" id="hsRt">0%</div>
+            <div class="hstat-lbl">Threat Rate</div>
+          </div>
+        </div>
+        <div id="histContent">
+          <div class="hist-empty">
+            <div class="big">📭</div>
+            <p style="color:var(--text2)">No scans yet. Go to Scanner to analyze URLs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ADMIN PAGE ══════════════════════════════════════════════ -->
+    <div class="page" id="page-admin">
+      <div style="display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 62px)">
+        <aside
+          style="background:var(--surface);border-right:1px solid var(--border);padding:1.2rem .8rem;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto">
+          <div class="aside-section-label">Analytics</div>
+          <button class="aside-btn active" id="asb-overview" onclick="switchAdminTab('overview',this)"><span
+              class="aside-icon">📊</span>Overview</button>
+          <button class="aside-btn" id="asb-reports" onclick="switchAdminTab('reports',this)"><span
+              class="aside-icon">📈</span>Reports</button>
+          <div class="aside-section-label">Management</div>
+          <button class="aside-btn" id="asb-users" onclick="switchAdminTab('users',this)"><span
+              class="aside-icon">👥</span>Users</button>
+          <button class="aside-btn" id="asb-history" onclick="switchAdminTab('history',this)"><span
+              class="aside-icon">📋</span>All Scans</button>
+          <div class="aside-section-label">System</div>
+          <button class="aside-btn" id="asb-danger" onclick="switchAdminTab('danger',this)"><span
+              class="aside-icon">⚠️</span>Danger Zone</button>
+        </aside>
+        <div style="padding:1.8rem;overflow-y:auto">
+
+          <!-- OVERVIEW -->
+          <div class="admin-tab active" id="atab-overview">
+            <div class="admin-tab-header">Platform Overview</div>
+            <div class="admin-tab-sub">All users · All scans · Live stats</div>
+            <div class="admin-stat-grid" id="ovStatGrid">
+              <div class="hstat">
+                <div class="hstat-val" style="color:var(--purple)" id="aov-u">—</div>
+                <div class="hstat-lbl">Users</div>
+              </div>
+              <div class="hstat">
+                <div class="hstat-val c-blue" id="aov-t">—</div>
+                <div class="hstat-lbl">Total Scans</div>
+              </div>
+              <div class="hstat">
+                <div class="hstat-val c-red" id="aov-p">—</div>
+                <div class="hstat-lbl">Phishing</div>
+              </div>
+              <div class="hstat">
+                <div class="hstat-val c-green" id="aov-s">—</div>
+                <div class="hstat-lbl">Safe</div>
+              </div>
+              <div class="hstat">
+                <div class="hstat-val c-red" id="aov-r">—</div>
+                <div class="hstat-lbl">Threat Rate</div>
+              </div>
+            </div>
+            <div class="adm-section">
+              <div class="adm-sec-head">
+                <div class="adm-sec-title">🕐 Recent Scans (all users)</div>
+                <button class="btn btn-outline" style="font-size:.72rem" onclick="loadAdminOverview()">↻
+                  Refresh</button>
+              </div>
+              <div class="adm-table-wrap">
+                <table class="adm-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>URL</th>
+                      <th>User</th>
+                      <th>Models</th>
+                      <th>Verdict</th>
+                      <th>Conf</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="aov-tb">
+                    <tr>
+                      <td colspan="7" class="adm-empty">Loading…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- REPORTS -->
+          <div class="admin-tab" id="atab-reports">
+            <div class="admin-tab-header">Analytics Report</div>
+            <div class="admin-tab-sub">User activity · Top phishing threats · Model performance</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.3rem" id="rep-stats">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="adm-section">
+                <div class="adm-sec-head">
+                  <div class="adm-sec-title">👤 User Activity</div>
+                </div>
+                <div class="adm-table-wrap">
+                  <table class="adm-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Scans</th>
+                        <th>Phishing</th>
+                        <th>Safe</th>
+                        <th>Level</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rep-ua">
+                      <tr>
+                        <td colspan="5" class="adm-empty">Loading…</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="adm-section">
+                <div class="adm-sec-head">
+                  <div class="adm-sec-title">⚠️ Top Phishing URLs</div>
+                </div>
+                <div class="adm-table-wrap">
+                  <table class="adm-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>URL</th>
+                        <th>Hits</th>
+                        <th>Users</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rep-tp">
+                      <tr>
+                        <td colspan="4" class="adm-empty">Loading…</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- USERS -->
+          <div class="admin-tab" id="atab-users">
+            <div
+              style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.8rem">
+              <div>
+                <div class="admin-tab-header">User Management</div>
+                <div class="admin-tab-sub">All registered accounts</div>
+              </div>
+              <button class="btn btn-outline" onclick="loadAdminUsers()">↻ Refresh</button>
+            </div>
+            <div class="adm-section">
+              <div class="adm-table-wrap">
+                <table class="adm-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Registered</th>
+                      <th>Scans</th>
+                      <th>Phishing</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-tb">
+                    <tr>
+                      <td colspan="7" class="adm-empty">Loading…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALL SCANS -->
+          <div class="admin-tab" id="atab-history">
+            <div
+              style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.8rem">
+              <div>
+                <div class="admin-tab-header">All Scan History</div>
+                <div class="admin-tab-sub">Every scan from every user · latest 500</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-outline" onclick="loadAdminHistory()">↻ Refresh</button>
+                <button class="btn btn-blue" onclick="exportAdminCSV()">📄 Export CSV</button>
+                <button class="btn btn-blue" onclick="downloadAdminReport()">⬇ Report</button>
+              </div>
+            </div>
+            <div class="adm-section">
+              <div class="adm-table-wrap">
+                <table class="adm-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>URL</th>
+                      <th>User</th>
+                      <th>Models</th>
+                      <th>Verdict</th>
+                      <th>Conf</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hist-tb">
+                    <tr>
+                      <td colspan="7" class="adm-empty">Click Refresh to load</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- DANGER ZONE -->
+          <div class="admin-tab" id="atab-danger">
+            <div class="admin-tab-header" style="color:var(--red)">⚠️ Danger Zone</div>
+            <div class="admin-tab-sub">Irreversible actions — double confirmation required</div>
+            <div class="adm-section" style="border-color:rgba(200,30,30,.22);margin-bottom:1rem">
+              <div class="adm-sec-head">
+                <div class="adm-sec-title" style="color:var(--red)">🗑 Delete All Scan History</div>
+              </div>
+              <div style="padding:1.2rem">
+                <p style="font-size:.82rem;color:var(--text2);line-height:1.65;margin-bottom:.9rem">Permanently deletes
+                  <strong>ALL</strong> scan records from <strong>ALL</strong> users. Cannot be undone.</p>
+                <button class="btn btn-danger" onclick="adminClearAll()"
+                  style="background:var(--red);color:#fff;border-color:var(--red)">🗑 Delete All History</button>
+              </div>
+            </div>
+            <div class="adm-section">
+              <div class="adm-sec-head">
+                <div class="adm-sec-title">🚪 Admin Logout</div>
+              </div>
+              <div style="padding:1.2rem">
+                <p style="font-size:.82rem;color:var(--text2);margin-bottom:.8rem">End your admin session and return to
+                  user dashboard.</p>
+                <button class="btn btn-outline" onclick="doAdminLogout()">🚪 Logout Admin</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /page-admin -->
+
+    <!-- ══ ABOUT PAGE ══════════════════════════════════════════════ -->
+    <div class="page" id="page-about">
+      <div class="ctr">
+        <div class="about-hero">
+          <div class="about-shield">🛡</div>
+          <h2 style="font-family:var(--display);font-size:1.75rem;font-weight:900;margin-bottom:.5rem">PhishGuard Pro
+            2.0</h2>
+          <p style="color:var(--text2);font-size:.85rem;line-height:1.8;max-width:560px;margin:0 auto">Multi-model AI
+            ensemble phishing detection platform. 6 ML algorithms trained on the
+            <strong>phishing_features_database_1100.csv</strong> dataset (1,100 URLs, 15 features). All models achieve
+            100% accuracy on the test set.</p>
+        </div>
+        <div class="about-grid">
+          <div class="card">
+            <h4 style="font-family:var(--display);font-weight:800;margin-bottom:.7rem">🗳️ Ensemble Voting</h4>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.7">Select 1–6 models. Each runs independently on
+              the URL. If ≥50% flag phishing → HIGH RISK. Model comparison tab shows per-model confidence.</p>
+          </div>
+          <div class="card">
+            <h4 style="font-family:var(--display);font-weight:800;margin-bottom:.7rem">📊 Real ML Models</h4>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.7">All 6 models are trained on the actual dataset
+              using scikit-learn. Features extracted from URL structure match the training data format exactly.</p>
+          </div>
+          <div class="card">
+            <h4 style="font-family:var(--display);font-weight:800;margin-bottom:.7rem">🔒 Private History</h4>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.7">Each user only sees their own scan history.
+              Admins have a separate panel with full visibility, user activity summaries, and top phishing URL tracking.
+            </p>
+          </div>
+          <div class="card">
+            <h4 style="font-family:var(--display);font-weight:800;margin-bottom:.7rem">🐍 Flask Backend</h4>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.7">Python Flask handles auth, history, and
+              real-time URL scanning. Passwords are SHA-256 hashed. Server-side scan storage with user isolation.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sl">Dataset</div>
+          <div class="st">phishing_features_database_1100.csv</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:1rem">
+            <div class="feat-item"><span class="feat-name">Have_IP</span><span class="feat-val ok">Binary</span></div>
+            <div class="feat-item"><span class="feat-name">Have_At</span><span class="feat-val ok">Binary</span></div>
+            <div class="feat-item"><span class="feat-name">URL_Length</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">URL_Depth</span><span class="feat-val ok">Numeric</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">Redirection</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">https_Domain</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">TinyURL</span><span class="feat-val ok">Binary</span></div>
+            <div class="feat-item"><span class="feat-name">Prefix/Suffix</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">DNS_Record</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">Web_Traffic</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">Domain_Age</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">Domain_End</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">iFrame</span><span class="feat-val ok">Binary</span></div>
+            <div class="feat-item"><span class="feat-name">Mouse_Over</span><span class="feat-val ok">Binary</span>
+            </div>
+            <div class="feat-item"><span class="feat-name">Right_Click</span><span class="feat-val ok">Binary</span>
+            </div>
+          </div>
+        </div>
+        <div class="disclaimer">
+          <span style="font-size:.95rem;flex-shrink:0">⚠️</span>
+          <p style="font-size:.75rem;color:var(--text2);line-height:1.6"><strong
+              style="color:var(--amber)">Disclaimer:</strong> PhishGuard Pro is a research and educational tool.
+            Detection uses real ML models trained on 1,100 URLs. Results are probabilistic based on URL structural
+            features — it does not access live DNS or real-time threat feeds. Always verify suspicious URLs through
+            multiple independent sources before entering credentials.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <script src="app.js"></script>
+</body>
+
+</html>

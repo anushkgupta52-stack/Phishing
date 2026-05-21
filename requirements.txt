@@ -1,0 +1,8 @@
+Flask==3.0.3
+Flask-MySQLdb==1.0.1
+Werkzeug==3.0.3
+mysqlclient==2.2.4
+scikit-learn==1.5.1
+numpy==1.26.4
+python-docx==1.1.2
+gunicorn
