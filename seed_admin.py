@@ -4,7 +4,6 @@ seed_admin.py — run ONCE after schema.sql to set real password hashes.
 Usage:
     python seed_admin.py
 """
-
 import MySQLdb
 from werkzeug.security import generate_password_hash
 
